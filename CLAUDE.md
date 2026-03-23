@@ -8,7 +8,7 @@ Act as an industry-level algorithmic trader with 50 years of experience. Full kn
 2. **Keep it simple** - Short, precise responses; get to the point
 3. **Read before modifying** - Always read files first before suggesting changes
 4. **Use memory files** - Document decisions and patterns in `/home/monesh/.claude/projects/-home-monesh-QuantPulse/memory/`
-5. **Read `/docs/system/` first** - Always check architecture docs before modifying core systems (when they exist)
+5. **Read `docs/` before modifying code** - Always read the relevant doc in `docs/` before touching any strategy, broker, scanner, data, or journal file. Docs are the source of truth for why decisions were made.
 6. **No direct DB queries** - Never instantiate DB classes or run queries directly. Provide raw SQL for the user to run manually and return output
 
 ## Memory Files Location

@@ -112,10 +112,38 @@ Once placed, the broker manages both exits. You don't need to monitor the positi
 
 ---
 
+## claude-agent-sdk
+
+**What it is:** The official Claude Code Agent SDK — lets Python scripts spawn a Claude agent that uses your existing Claude Code subscription to do real work (read files, write files, run edits). No separate Anthropic API key or billing needed.
+
+**Why we use it (and not the `anthropic` SDK):**
+- The `anthropic` SDK requires an `ANTHROPIC_API_KEY` and bills per token — every doc update would cost money
+- `claude-agent-sdk` routes through your Claude Code CLI session — same model, zero extra cost
+- It gives the agent full access to built-in tools: `Read`, `Write`, `Edit`
+
+**How we use it:**
+- `agents/docs_agent.py` uses `query()` from `claude_agent_sdk` to run an agent with `permission_mode="acceptEdits"` that reads changed source files (via git diff) and rewrites the relevant `docs/` files
+- The agent is invoked with `allowed_tools=["Read", "Write", "Edit"]` so it can only touch files — no shell access
+- Can also invoke the same logic as the `/update-docs` slash command directly inside Claude Code
+
+**Usage:**
+```bash
+# Auto-detect changes since last commit
+python agents/docs_agent.py
+
+# Only staged changes
+python agents/docs_agent.py --staged
+
+# Specific files
+python agents/docs_agent.py --files strategies/mean_reversion.py
+```
+
+---
+
 ## Architecture: How Everything Connects
 
 ```
-scanner/scan.py          ← entry point, run this daily pre-market
+scanner/scan.py          ← entry point, run daily pre-market (7:30 AM CDT)
        │
        ├── data/universe.py      ← get list of ~2,856 liquid US stocks (cached weekly)
        ├── data/fetch.py         ← download 1yr of daily OHLCV in batches of 500
@@ -126,19 +154,35 @@ scanner/scan.py          ← entry point, run this daily pre-market
        │   └── breakout.py       ← 52-week high + volume + RS filter
        │
        ├── broker/alpaca_client.py  ← place bracket orders, enforce time stops
+       ├── journal/ledger.py        ← reconcile exits, compute win rate / P&L stats
        ├── notifications/email_client.py  ← send summary + error emails
        └── journal/trades.csv    ← append every placed order for win rate tracking
+
+scanner/eod.py           ← run after market close (3:30 PM CDT)
+       │
+       ├── broker/alpaca_client.py  ← pull open positions + closed orders
+       ├── journal/ledger.py        ← reconcile exits into trades.csv
+       └── notifications/email_client.py  ← send EOD report email
+
+agents/docs_agent.py     ← run after code changes to keep docs/ current
+       └── claude-agent-sdk         ← Claude agent with Read/Write/Edit tools
 ```
 
 **Daily workflow:**
-1. Run `python scanner/scan.py` pre-market (8:00–9:15 AM ET)
-2. Universe loaded from cache (or rebuilt if > 7 days old)
-3. OHLCV data downloaded for all symbols
-4. All 3 strategies run in parallel (ThreadPoolExecutor)
-5. Top 5 signals per strategy selected
-6. Bracket orders placed via Alpaca — broker handles all exits
-7. Results emailed to `monesh.kovi1@gmail.com`
-8. Trades logged to `journal/trades.csv`
+1. **Pre-market (7:30 AM CDT):** `python scanner/scan.py`
+   - Universe loaded from cache (or rebuilt if > 7 days old)
+   - OHLCV data downloaded for all symbols
+   - Open positions ≥ 10 days closed (time stop enforcement)
+   - All 3 strategies run in parallel (ThreadPoolExecutor)
+   - Top 5 signals per strategy selected
+   - Bracket orders placed via Alpaca — broker handles all exits
+   - Results emailed to `monesh.kovi1@gmail.com`
+   - Trades logged to `journal/trades.csv`
+
+2. **After market close (3:30 PM CDT):** `python scanner/eod.py`
+   - Closed orders pulled from Alpaca and reconciled into ledger
+   - Exit type determined from order type (LIMIT→TAKE_PROFIT, STOP→STOP_LOSS, MARKET→TIME_STOP)
+   - EOD report emailed: today's closed trades, open positions with unrealized P&L, running win rate/P&L by strategy
 
 **Time stop enforcement:**
 Each morning before placing new orders, the scanner checks `journal/trades.csv` for any positions open ≥ 10 days and closes them via Alpaca before scanning for new signals.

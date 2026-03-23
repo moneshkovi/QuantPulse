@@ -11,7 +11,7 @@ Reference material for understanding how the system works, why each decision was
 | `strategies/breakout.md` | 52-week high breakout strategy — overhead supply theory, volume confirmation, Minervini method |
 | `indicators.md` | Plain-English explanation of every indicator: RSI, ATR, Bollinger Bands, ADX, Moving Averages, Volume Ratio |
 | `risk_management.md` | Position sizing (1% rule), ATR stops, time stops, max positions — the math behind staying solvent |
-| `tools.md` | Every library and API used: Alpaca, yfinance, ta, pandas — what each does and why we chose it |
+| `tools.md` | Every library and API used: Alpaca, yfinance, ta, pandas, claude-agent-sdk — what each does and why we chose it |
 
 ## How to Use This
 
@@ -22,3 +22,5 @@ Reference material for understanding how the system works, why each decision was
 **If you want to understand why a position was sized the way it was** — read `risk_management.md`.
 
 **If you want to add a new strategy** — follow the pattern in `strategies/mean_reversion.py`. The `get_signals(bars)` interface is the contract: take a dict of DataFrames, return a sorted list of `Signal` objects.
+
+**If these docs are out of date** — run `/update-docs` inside Claude Code (or `python agents/docs_agent.py`) to auto-update them based on recent code changes.
