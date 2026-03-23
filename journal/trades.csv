@@ -1,0 +1,6 @@
+date,symbol,strategy,entry_price,stop_price,target_price,qty,atr,risk_reward,entry_date,exit_date,exit_price,result,pnl
+2026-03-22,ATO,mean_reversion,180.49,175.68,186.91,55,3.2079,1.33,2026-03-22,,,,
+2026-03-22,AEP,mean_reversion,125.66,121.66,130.99,79,2.6636,1.33,2026-03-22,,,,
+2026-03-22,AAUC,mean_reversion,30.6,30.0,31.41,326,0.4029,1.35,2026-03-22,,,,
+2026-03-22,PNW,mean_reversion,97.27,94.16,101.41,102,2.0725,1.33,2026-03-22,,,,
+2026-03-22,EXC,mean_reversion,46.44,44.87,48.53,215,1.0443,1.33,2026-03-22,,,,
